@@ -17,8 +17,6 @@ class Detector():
             lang = 'es'
         self.lang = lang
         self.interact = Interaction(lang=self.lang)
-        self.interact.read_msg('hi')
-        self.interact.read_msg('loading')
         self.voice_detector = LiveSpeech(
             verbose = False,
             sampling_rate = 16000,
@@ -31,13 +29,8 @@ class Detector():
             #keyphrase = 'forward'
         )
 
-    def __delete__(self):
-        self.interact.read_msg('bye')
-
     def run(self):
-        self.interact.read_msg('cmd')
-        print('Comandos disponibles: {}'.format(','.join(self.interact.cmd())))
-        self.interact.read_msg(','.join(self.interact.cmd()), literal=True)
+        self.interact.say_commands()
         for phrase in self.voice_detector:
             self.interact.on_event(phrase.segments(detailed=True))
             if self.interact.is_end():

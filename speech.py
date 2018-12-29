@@ -2,6 +2,11 @@ from gtts import gTTS
 from subprocess import DEVNULL, STDOUT, check_call
 import os
 
+class Music():
+    def __init__(self, volume=10):
+        # Currently thinking about it
+        pass
+
 class Speech():
     def __init__(self, text, lang='es'):
         try:

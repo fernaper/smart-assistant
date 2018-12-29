@@ -2,13 +2,11 @@ from state.State import State
 
 class ReadyState(State):
     def on_event(self, event):
-        print(event)
         if event == 'start':
             return StartState()
-        elif event == 'half-start':
+        elif event == 'is-start':
             return IsStartState()
         elif event == 'exit':
-            print('Dijiste adios')
             return ExitState()
         return self
 
@@ -16,7 +14,7 @@ class ReadyState(State):
         return [StartState(), IsStartState()]
 
     def cmd(self):
-        return ['start', 'half-start', 'exit']
+        return ['start', 'exit']
 
 class StartState(State):
     def on_event(self, event, *args):
