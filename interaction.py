@@ -1,4 +1,5 @@
 from speech import Speech
+from speech import Music
 from state.AllStates import *
 import utils
 
@@ -6,7 +7,7 @@ class Interaction():
     msg = {
         'es': {
             'hi':'Bienvenido al sistema de detección automático Karma.',
-            'bye':'Adios vuelve de nuevo.',
+            'bye':'Adios, vuelve de nuevo.',
             'loading':'Cargando comandos.',
             'cmd': 'Comandos disponibles ',
             'you-say': 'Dijiste',
@@ -35,6 +36,7 @@ class Interaction():
             self.lang = 'es'
         else:
             self.lang = lang
+        self.music = Music()
         self.read_msg('hi')
         self.read_msg('loading')
 
