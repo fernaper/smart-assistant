@@ -1,7 +1,9 @@
 from gtts import gTTS
 from subprocess import DEVNULL, STDOUT, check_call
+from utils import cls
 import os
 import pygame
+cls()
 
 class Music():
     def __init__(self, autoplay=True):

@@ -2,6 +2,18 @@ from speech import Speech
 from speech import Music
 from state.AllStates import *
 import utils
+import difflib
+
+def generate_simplified_cmd(commands):
+    ans = {}
+    for key, value in commands.items():
+        ans[key] = {}
+        for k, v in value.items():
+            simp_k = k[:min(len(k),3)]
+            if not ans[key].get(simp_k):
+                ans[key][simp_k] = []
+            ans[key][simp_k].append(k)
+    return ans
 
 class Interaction():
     msg = {
@@ -10,6 +22,7 @@ class Interaction():
             'bye':'Adios, vuelve de nuevo.',
             'loading':'Cargando comandos.',
             'cmd': 'Comandos disponibles ',
+            'phrase': 'Frase',
             'you-say': 'Dijiste',
             'unknown': 'Comando desconocido.'
         }
@@ -22,14 +35,16 @@ class Interaction():
             'si':'yes',
             'no':'no',
             'comandos':'cmd',
-            'com':'is-cmd',
             'ayuda':'help'
         }
     }
 
     reverse_commands = {lang:{v:k for k,v in c.items()} for lang, c in commands.items()}
 
+    simplified_commands = generate_simplified_cmd(commands)
+
     def __init__(self, lang='es', talk=True):
+        self.prev_state = None
         self.state = ReadyState()
         self.talk = talk
         if lang not in Interaction.msg:
@@ -48,8 +63,7 @@ class Interaction():
 
     def say_commands(self):
         self.read_msg('{}: {}'.format(Interaction.msg[self.lang]['cmd'],
-            ', '.join([Interaction.reverse_commands[self.lang][x] for x in self.cmd()]) +
-            ', ' + Interaction.reverse_commands[self.lang]['help']), literal=True)
+            ', '.join([Interaction.reverse_commands[self.lang][x] for x in self.cmd()])), literal=True)
 
     def is_end(self):
         return str(self.state) == 'ExitState'
@@ -69,18 +83,48 @@ class Interaction():
             if self.talk:
                 Speech(Interaction.msg[self.lang][msg], lang=self.lang)
 
+    def valid_command(self, event):
+        if not event:
+            return []
+        word, confidence = event
+        # If we just say exactly the word
+        if Interaction.commands[self.lang].get(word) in self.cmd():
+            return [(Interaction.commands[self.lang][word], confidence)]
+        possible_cmd = []
+        simp_word = word[:min(len(word),3)]
+        if simp_word in Interaction.simplified_commands[self.lang]:
+            possible_cmd = Interaction.simplified_commands[self.lang][simp_word]
+        # We intersect
+        rly_possible = []
+        for each_word in possible_cmd:
+            if Interaction.commands[self.lang][each_word] in self.cmd():
+                rly_possible.append(each_word)
+        # Now if we have some 'rly_possible' i will select the most accurate (if it is better than 90%)
+        ans = []
+        for entry in rly_possible:
+            diff = difflib.SequenceMatcher(a=word.lower(), b=entry.lower()).ratio()
+            if diff > 0.9:
+                ans.append((Interaction.commands[self.lang][entry],diff))
+            print(word,diff)
+        return ans
+
     def on_event(self, event):
         event = [(utils.remove_accents(e[0]),e[1]) for e in event if not utils.tag(e[0])]
-        print(' '.join([e[0] for e in event]))
-        event = list(filter(lambda x: x[0] != None,
-                            [e for e in event
-                            if Interaction.commands[self.lang].get(e[0]) in self.cmd()
-                            or e[0] == Interaction.reverse_commands[self.lang]['help']]))
+        print('{}: {}'.format(Interaction.msg[self.lang]['phrase'],' '.join([e[0] for e in event])))
+        event = [self.valid_command(e) for e in event]
+        # Flat list
+        event = [y for x in event for y in x]
         if event:
-            event = max(event,key=lambda item:item[1]) # I ordered by confidence
-            if event[0] == Interaction.reverse_commands[self.lang]['help']:
+            event = max(event,key=lambda item:item[1])[0] # I ordered by confidence
+            if Interaction.reverse_commands[self.lang][event] == Interaction.reverse_commands[self.lang]['help']:
                 self.say_commands()
                 return
-            self.read_msg('{}: {}'.format(Interaction.msg[self.lang]['you-say'], event[0]), literal=True)
-            self.state = self.state.on_event(Interaction.commands[self.lang].get(event[0]))
+            self.read_msg('{}: {}'.format(
+                          Interaction.msg[self.lang]['you-say'],
+                          Interaction.reverse_commands[self.lang][event]), literal=True)
+            prev_state = self.state
+            self.state = self.state.on_event(event)
+            if prev_state != self.state:
+                self.prev_state = prev_state
+                self.say_commands()
             print(self.state)

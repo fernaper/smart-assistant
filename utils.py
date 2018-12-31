@@ -1,5 +1,6 @@
 import unicodedata
 import re
+import os
 
 _re_t = re.compile('<\/?[^>]*>')
 
@@ -8,3 +9,6 @@ def remove_accents(text):
 
 def tag(text):
     return _re_t.match(text)
+
+def cls():
+    os.system('cls' if os.name=='nt'else'clear')

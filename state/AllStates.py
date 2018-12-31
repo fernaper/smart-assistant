@@ -14,7 +14,7 @@ class ReadyState(State):
         return [StartState(), IsStartState()]
 
     def cmd(self):
-        return ['start', 'exit']
+        return ['start', 'exit', 'help']
 
 class StartState(State):
     def on_event(self, event, *args):
@@ -30,7 +30,7 @@ class StartState(State):
         return [ExitState(), RunningState(), IsCmdState()]
 
     def cmd(self):
-        return ['exit', 'cmd', 'is-cmd']
+        return ['exit', 'cmd', 'help']
 
 class IsStartState(State):
     def on_event(self, event):
@@ -44,7 +44,7 @@ class IsStartState(State):
         return [StartState(), ReadyState()]
 
     def cmd(self):
-        return ['yes', 'no']
+        return ['yes', 'no', 'help']
 
 class RunningState(State):
     def on_event(self, event):
@@ -55,7 +55,7 @@ class RunningState(State):
         return [StartState()]
 
     def cmd(self):
-        return []
+        return ['help']
 
 class IsCmdState(State):
     def on_event(self, event):
@@ -69,7 +69,7 @@ class IsCmdState(State):
         return [RunningState(), StartState()]
 
     def cmd(self):
-        return ['yes', 'no']
+        return ['yes', 'no', 'help']
 
 class ExitState(State):
     def on_event(self, event):
@@ -79,7 +79,7 @@ class ExitState(State):
         return []
 
     def cmd(self):
-        return []
+        return ['help']
 # End of our states.
 
 if __name__ == '__main__':
